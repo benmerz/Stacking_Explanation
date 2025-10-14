@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Understanding Stacking in Machine Learning</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Understanding Stacking in Machine Learning</h1>
+        <p>An interactive guide to ensemble learning's stacking method</p>
+    </header>
+
+    <main>
+        <section id="introduction">
+            <h2>What is Stacking?</h2>
+            <p>Stacking (Stacked Generalization) is an advanced ensemble learning technique that goes beyond simple methods like bagging or boosting. Instead of combining predictions through fixed rules (like averaging), stacking trains a machine learning model to optimally combine the predictions of other models.</p>
+            <p><strong>Why stacking works:</strong> Different models have different strengths and weaknesses. A decision tree might excel at capturing non-linear patterns but overfit noisy data. An SVM might find clean boundaries but struggle with complex distributions. By learning how to best combine these models, stacking can achieve better performance than any individual model.</p>
+            <p><strong>The stacking process:</strong></p>
+            <ol>
+                <li>Train diverse base models on the training data</li>
+                <li>Use base model predictions as features to train a meta-learner</li>
+                <li>For new data, get base model predictions and feed them to the meta-learner</li>
+            </ol>
+            <p>This interactive tutorial will walk you through each step with a concrete example.</p>
+            <button id="start-tutorial">Start Interactive Tutorial</button>
+        </section>
+
+        <section id="tutorial" class="hidden">
+            <h2>Interactive Tutorial</h2>
+            <div id="step-container">
+                <div id="step-1" class="step">
+                    <h3>Step 1: The Dataset</h3>
+                    <p>Stacking is an ensemble learning technique that combines multiple machine learning models to create a more powerful predictor. Unlike simple averaging of predictions, stacking trains a "meta-learner" to optimally combine the predictions from base models.</p>
+                    <p>Let's start with a simple 2D classification dataset. We have 20 data points, where each point represents a feature vector (x, y coordinates) and a binary label (0 or 1). Red points belong to class 0, blue points to class 1. This dataset is designed so that no single model will be perfect, demonstrating why ensemble methods like stacking are valuable.</p>
+                    <p>The goal is to learn a decision boundary that separates the two classes as accurately as possible.</p>
+                    <canvas id="dataset-canvas" width="400" height="300"></canvas>
+                </div>
+
+                <div id="step-2" class="step">
+                    <h3>Step 2: Training Base Models</h3>
+                    <p>In stacking, we first train several diverse base models on the same training data. Diversity is key - we want models that make different kinds of errors so their mistakes can complement each other.</p>
+                    <p>Here we use three different types of models:</p>
+                    <ul>
+                        <li><strong>Decision Tree</strong>: Creates a hierarchical set of rules based on feature thresholds. Here it splits on x-coordinate = 3.5, classifying points left of this line as class 0.</li>
+                        <li><strong>SVM (Support Vector Machine)</strong>: Finds the optimal hyperplane that maximizes the margin between classes. This linear SVM uses a decision boundary: 0.5*x - 0.3*y - 1.5 = 0.</li>
+                        <li><strong>KNN (K-Nearest Neighbors)</strong>: Classifies a point based on the majority vote of its k closest neighbors (here k=3). No explicit boundary is shown as it's instance-based.</li>
+                    </ul>
+                    <p>Each model has its own strengths and weaknesses. Decision trees can capture non-linear patterns but may overfit. SVMs are good at finding clear boundaries but assume linear separability. KNN is simple but sensitive to local density.</p>
+                    <div id="models-container">
+                        <div class="model">
+                            <h4>Decision Tree</h4>
+                            <canvas id="dt-canvas" width="200" height="150"></canvas>
+                        </div>
+                        <div class="model">
+                            <h4>SVM</h4>
+                            <canvas id="svm-canvas" width="200" height="150"></canvas>
+                        </div>
+                        <div class="model">
+                            <h4>KNN</h4>
+                            <canvas id="knn-canvas" width="200" height="150"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="step-3" class="step">
+                    <h3>Step 3: Base Model Predictions</h3>
+                    <p>Once trained, each base model makes predictions on the training set. These predictions become the input features for the meta-learner.</p>
+                    <p>In traditional machine learning, we use raw features (x, y coordinates) to predict labels. In stacking, we use the base models' predictions as features instead. This transforms the problem: instead of predicting based on (x, y), the meta-learner predicts based on (DT_prediction, SVM_prediction, KNN_prediction).</p>
+                    <p>The table below shows:</p>
+                    <ul>
+                        <li><strong>Data Point</strong>: Index of the training example</li>
+                        <li><strong>True Label</strong>: The actual class (ground truth)</li>
+                        <li><strong>Model Predictions</strong>: What each base model predicted for this point</li>
+                    </ul>
+                    <p>Notice that no single model is always correct - this is where stacking shines, as the meta-learner can learn which models to trust in different situations.</p>
+                    <table id="predictions-table">
+                        <thead>
+                            <tr>
+                                <th>Data Point</th>
+                                <th>True Label</th>
+                                <th>DT Prediction</th>
+                                <th>SVM Prediction</th>
+                                <th>KNN Prediction</th>
+                            </tr>
+                        </thead>
+                        <tbody id="predictions-body">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="step-4" class="step">
+                    <h3>Step 4: Training the Meta-Learner</h3>
+                    <p>The meta-learner is trained using the base models' predictions as input features and the original true labels as targets. This is the key insight of stacking: instead of manually combining predictions (like averaging), we learn the optimal combination.</p>
+                    <p>Common meta-learners include:</p>
+                    <ul>
+                        <li><strong>Logistic Regression</strong>: Learns weights for each base model's prediction</li>
+                        <li><strong>Random Forest</strong>: Can capture complex interactions between base model predictions</li>
+                        <li><strong>Simple averaging or majority vote</strong>: Basic but effective (what we use here)</li>
+                    </ul>
+                    <p>Our simple meta-learner uses majority vote: if at least 2 out of 3 base models predict class 1, the final prediction is 1. This works well when base models have similar performance.</p>
+                    <p>The meta-learner learns patterns like "when DT and SVM agree but KNN disagrees, trust the majority" or "DT is often wrong in certain regions, so down-weight its influence there."</p>
+                    <div id="meta-learner-viz">
+                        <p>Meta-Learner Input: [DT_pred, SVM_pred, KNN_pred] → Final Prediction</p>
+                        <canvas id="meta-canvas" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <div id="step-5" class="step">
+                    <h3>Step 5: Making Final Predictions</h3>
+                    <p>For new, unseen data, stacking follows a two-stage prediction process:</p>
+                    <ol>
+                        <li><strong>Stage 1</strong>: Each base model makes a prediction on the new data point</li>
+                        <li><strong>Stage 2</strong>: The meta-learner combines these predictions to make the final decision</li>
+                    </ol>
+                    <p>This is different from training, where the meta-learner learns from base model predictions on the training set. During prediction, the base models first analyze the new data independently.</p>
+                    <p>Try entering coordinates below to see how the stacking process works for a new point. The system will show you:</p>
+                    <ul>
+                        <li>What each base model predicts for your point</li>
+                        <li>How the meta-learner combines these predictions</li>
+                        <li>The final stacked prediction</li>
+                    </ul>
+                    <p>Stacking often outperforms individual models because it can learn to:</p>
+                    <ul>
+                        <li>Weight more accurate models higher</li>
+                        <li>Correct systematic biases in base models</li>
+                        <li>Exploit complementary strengths of different algorithms</li>
+                    </ul>
+                    <div id="final-prediction">
+                        <p>Test with a new point:</p>
+                        <input type="number" id="test-x" placeholder="X coordinate" step="0.1">
+                        <input type="number" id="test-y" placeholder="Y coordinate" step="0.1">
+                        <button id="predict-btn">Predict</button>
+                        <p id="prediction-result"></p>
+                    </div>
+                    <button id="restart">Restart Tutorial</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="explanation">
+            <h2>Why Stacking Works</h2>
+            <p>Stacking improves performance by learning how to best combine the strengths of different models. The meta-learner can:</p>
+            <ul>
+                <li><strong>Learn optimal weights</strong>: Instead of equal weighting, the meta-learner can learn that one model is more reliable than others</li>
+                <li><strong>Capture interactions</strong>: The meta-learner can learn patterns like "when model A and model B disagree, trust model C"</li>
+                <li><strong>Correct biases</strong>: If a base model systematically makes certain errors, the meta-learner can learn to compensate</li>
+                <li><strong>Exploit diversity</strong>: Different models make different errors, and stacking learns which model to trust in different situations</li>
+            </ul>
+            <p><strong>Key considerations:</strong></p>
+            <ul>
+                <li>Base models should be diverse (different algorithms, different hyperparameters)</li>
+                <li>Avoid overfitting by using cross-validation when training the meta-learner</li>
+                <li>The meta-learner should be simple enough to avoid overfitting to the base model predictions</li>
+                <li>Stacking works best when base models have comparable performance (not when one dominates)</li>
+            </ul>
+            <p>Stacking is particularly powerful in machine learning competitions and real-world applications where maximizing predictive accuracy is crucial.</p>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
